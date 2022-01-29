@@ -1,28 +1,72 @@
 #include <iostream>
 #include <filesystem>
 #include <assert.h>
+#include <random>
+#include <format>
+#include <functional>
+#include <chrono>
+#include <map>
 
 namespace fs = std::filesystem;
 
-struct FileNode
+struct FileNode;
+
+struct DirectoryNode
 {
-	std::vector<std::unique_ptr<FileNode>> Children;
-	std::string internalPath;
-	fs::path fullPath;
+	std::vector<std::unique_ptr<FileNode>> Files;
+	std::vector<std::unique_ptr<DirectoryNode>> SubDirectories;
+	std::string FolderName;
+	std::string ID;
+	fs::path LocalPathOnDisk;
+
+	static std::uniform_int_distribution<uint64_t> Random;
+	static std::default_random_engine RandomEngine;
+
+	DirectoryNode(fs::path localPathOnDisk)
+	{
+		static bool randomInitialized = false;
+		if (!randomInitialized)
+		{
+			// TODO; Enable once the stuff is written to disk on intialize. Makes testing easier.
+			//RandomEngine.seed(std::chrono::system_clock::now().time_since_epoch().count());
+			randomInitialized = true;
+		}
+
+		static auto IDGenerator = std::bind(Random, RandomEngine);
+
+		Files = std::vector<std::unique_ptr<FileNode>>();
+		SubDirectories = std::vector<std::unique_ptr<DirectoryNode>>();
+		FolderName = localPathOnDisk.filename().string();
+		LocalPathOnDisk = localPathOnDisk.string();
+		ID = FolderName + "_" + std::format("{:010}", IDGenerator());
+	}
 
 	void print()
 	{
-		std::cout << fullPath << ";" << internalPath << std::endl;
+		std::cout << Files.size() << "; " << SubDirectories.size() << "; " << FolderName << "; " << ID << "; " << LocalPathOnDisk << std::endl;
 	}
 };
 
-void addToDirectoryTree(const fs::path& currentDir, FileNode* currentNode)
+std::default_random_engine DirectoryNode::RandomEngine = std::default_random_engine();
+std::uniform_int_distribution<uint64_t> DirectoryNode::Random = std::uniform_int_distribution<uint64_t>(0, std::numeric_limits<uint64_t>::max());
+
+struct FileNode
+{
+	std::string FileName;
+	std::string ID;
+
+	void print()
+	{
+		std::cout << FileName << std::endl;
+	}
+};
+
+void addToDirectoryTree(std::map<std::string, DirectoryNode*>& allDirectories, const fs::path& currentDir, DirectoryNode* currentNode)
 {
 	// Only directories should be added. The logic will not work with a file.
 	assert(fs::is_directory(currentDir));
 
-	// Should not be platform specific, but rather specific for the application, so use a default / as the separator.
-	std::unique_ptr<FileNode> thisNode = std::make_unique<FileNode>(std::vector<std::unique_ptr<FileNode>>(), currentNode->internalPath + currentDir.filename().string() + "/", currentDir);
+	allDirectories.emplace(currentNode->ID, currentNode);
 
 	currentNode->print();
 
@@ -30,32 +74,32 @@ void addToDirectoryTree(const fs::path& currentDir, FileNode* currentNode)
 	{
 		if (p.is_directory())
 		{
-			addToDirectoryTree(p, thisNode.get());
+			auto thisNode = std::make_unique<DirectoryNode>(p);
+
+			addToDirectoryTree(allDirectories, p, thisNode.get());
+
+			currentNode->SubDirectories.push_back(std::move(thisNode));
 		}
 		else
 		{
-			currentNode->Children.push_back(
-				std::make_unique<FileNode>(
-					std::vector<std::unique_ptr<FileNode>>(),
-					currentNode->internalPath + currentDir.filename().string(),
-					p.path())
+			currentNode->Files.push_back(
+				std::make_unique<FileNode>(p.path().filename().string())
 			);
 
-			currentNode->Children[currentNode->Children.size() - 1]->print();
+			currentNode->Files[currentNode->Files.size() - 1]->print();
 		}
 		
 	}
-
-	currentNode->Children.push_back(std::move(thisNode));
 }
 
 int main(int argc, const char* argv)
 {
 	fs::path testFilesPath(fs::current_path().parent_path().parent_path().append("TestFiles"));
 
-	std::unique_ptr<FileNode> root = std::make_unique<FileNode>(std::vector<std::unique_ptr<FileNode>>(), "/", testFilesPath);
+	std::unique_ptr<DirectoryNode> root = std::make_unique<DirectoryNode>(testFilesPath);
+	std::map<std::string, DirectoryNode*> allDirectories = std::map<std::string, DirectoryNode*>();
 
-	addToDirectoryTree(testFilesPath, root.get());
+	addToDirectoryTree(allDirectories, testFilesPath, root.get());
 
 	return 0;
 }
