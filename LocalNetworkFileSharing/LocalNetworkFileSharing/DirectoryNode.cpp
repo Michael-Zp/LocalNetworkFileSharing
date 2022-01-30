@@ -1,6 +1,6 @@
 #include "DirectoryNode.h"
 
-void DirectoryNode::AddToDirectoryTree(std::map<std::string, DirectoryNode*>& allDirectories, DirectoryNode* currentNode)
+void DirectoryNode::AddToDirectoryTree(DirectoryNode* currentNode, std::map<std::string, DirectoryNode*>& allDirectories, uint64_t& directoriesSize, uint64_t& filesSize)
 {
 	// Only directories should be added. The logic will not work with a file.
 	assert(fs::is_directory(currentNode->LocalPathOnDisk));
@@ -15,7 +15,7 @@ void DirectoryNode::AddToDirectoryTree(std::map<std::string, DirectoryNode*>& al
 		{
 			auto thisNode = std::make_unique<DirectoryNode>(p.path(), allDirectories);
 
-			AddToDirectoryTree(allDirectories, thisNode.get());
+			AddToDirectoryTree(thisNode.get(), allDirectories, directoriesSize, filesSize);
 
 			currentNode->SubDirectories.push_back(std::move(thisNode));
 		}

@@ -17,7 +17,7 @@ class DirectoryNode
 {
 
 public:
-	DirectoryNode(fs::path localPathOnDisk, std::map<std::string, DirectoryNode*>& allDirectories)
+	DirectoryNode(fs::path localPathOnDisk, std::map<std::string, DirectoryNode*>& allDirectories, uint64_t& directoriesSize, uint64_t& filesSize)
 	{
 		static MyRandom idGenerator = MyRandom(false);
 
@@ -29,7 +29,7 @@ public:
 		// 18446744073709551615 = uint64::max = 20 digits
 		ID = FolderName + "_" + std::format("{:020}", idGenerator());
 
-		AddToDirectoryTree(allDirectories, this);
+		AddToDirectoryTree(this, allDirectories, directoriesSize, filesSize);
 	}
 
 	void print()
@@ -45,5 +45,5 @@ private:
 	std::string ID;
 	fs::path LocalPathOnDisk;
 
-	void AddToDirectoryTree(std::map<std::string, DirectoryNode*>& allDirectories, DirectoryNode* currentNode);
+	void AddToDirectoryTree(DirectoryNode* currentNode, std::map<std::string, DirectoryNode*>& allDirectories, uint64_t& directoriesSize, uint64_t& filesSize);
 };
