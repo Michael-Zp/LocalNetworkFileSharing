@@ -37,6 +37,11 @@ public:
 		std::cout << Files.size() << "; " << SubDirectories.size() << "; " << FolderName << "; " << ID << "; " << LocalPathOnDisk << std::endl;
 	}
 
+	char* Serialize()
+	{
+
+	}
+
 private:
 
 	std::map<std::string, std::unique_ptr<FileNode>> Files;

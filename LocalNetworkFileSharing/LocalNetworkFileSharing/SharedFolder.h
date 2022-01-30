@@ -13,6 +13,9 @@ public:
 	SharedFolder(fs::path localPathOnDisk)
 	{
 		Root = std::make_unique<DirectoryNode>(localPathOnDisk, AllDirectories, DirectoriesSize, FilesSize);
+
+
+
 	}
 
 	std::vector<char> Serialize()
