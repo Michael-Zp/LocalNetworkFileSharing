@@ -28,14 +28,18 @@ public:
 		++FilesCount;
 	}
 
-	char* Serialize()
+	std::pair<uint64_t, char*> Serialize()
 	{
-		uint64_t bufSize = DirectoriesCount * sizeof(char) + DirectoriesSize + FilesCount * sizeof(char) + FilesSize;
+		uint64_t dirFlagsAndSpaceForSize = DirectoriesCount * (sizeof(char) * 2 + sizeof(uint64_t)); // char * 2 because we need one flag to GoDown and one to GoUp for each folder
+		uint64_t fileFlagsAndSpaceForSizes = FilesCount * (sizeof(char) + sizeof(uint64_t));
+		uint64_t bufSize = dirFlagsAndSpaceForSize + DirectoriesSize +  fileFlagsAndSpaceForSizes + FilesSize;
 		char* serializeBuffer = new char[bufSize];
 
 		uint64_t currentPos = 0;
 
 		SerializeFolder(Root.get(), serializeBuffer, currentPos, bufSize);
+
+		return std::make_pair(bufSize, serializeBuffer);
 	}
 
 	void SerializeFolder(DirectoryNode* currentNode, char* buf, uint64_t& pos, const uint64_t bufSize)

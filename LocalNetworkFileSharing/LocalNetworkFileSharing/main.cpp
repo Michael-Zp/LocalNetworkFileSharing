@@ -6,7 +6,9 @@ namespace fs = std::filesystem;
 
 int main(int argc, const char* argv)
 {
-	SharedFolder(fs::current_path().parent_path().parent_path().append("TestFiles"));
+	auto sharedFolder = SharedFolder(fs::current_path().parent_path().parent_path().append("TestFiles"));
+
+	auto serialized = sharedFolder.Serialize();
 
 	return 0;
 }

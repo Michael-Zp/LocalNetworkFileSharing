@@ -16,8 +16,6 @@ void DirectoryNode::AddToDirectoryTree(DirectoryNode* currentNode, SharedFolder&
 		{
 			auto thisNode = std::make_unique<DirectoryNode>(p.path(), rootFolder);
 
-			AddToDirectoryTree(thisNode.get(), rootFolder);
-
 			currentNode->SubDirectories.push_back(std::move(thisNode));
 		}
 		else
