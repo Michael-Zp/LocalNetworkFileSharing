@@ -34,6 +34,14 @@ public:
 		AddToDirectoryTree(this, rootFolder);
 	}
 
+	DirectoryNode(std::string id)
+	{
+		Files = std::map<std::string, std::unique_ptr<FileNode>>();
+		SubDirectories = std::vector<std::unique_ptr<DirectoryNode>>();
+		ID = id;
+		FolderName = id.substr(0, id.find_last_of("_"));
+	}
+
 	const std::string& GetID()
 	{
 		return ID;

@@ -15,6 +15,26 @@ public:
 		Root = std::make_unique<DirectoryNode>(localPathOnDisk, *this);
 	}
 
+	static void Deserialize(uint64_t dataSize, char* data)
+	{
+		uint64_t pos = 0;
+
+		// Always has to be a folder as the root
+		assert(data[pos] == (char)SerializeFlags::Directory);
+		++pos;
+
+		uint64_t* rootSize = reinterpret_cast<uint64_t*>(&(data[pos]));
+		pos += sizeof(uint64_t);
+
+		std::string rootId = std::string(&(data[pos]), *rootSize);
+
+		SharedFolder newSharedFolder;
+
+		newSharedFolder.Root = std::make_unique<DirectoryNode>(rootId);
+
+		return;
+	}
+
 	void SaveDirectoryMetaData(DirectoryNode* directoryNode)
 	{
 		DirectoriesSize += directoryNode->GetID().size();
@@ -107,6 +127,9 @@ private:
 
 	std::unique_ptr<DirectoryNode> Root;
 	std::map<std::string, DirectoryNode*> AllDirectories;
+
+	SharedFolder()
+	{ }
 
 	enum class SerializeFlags : char
 	{
