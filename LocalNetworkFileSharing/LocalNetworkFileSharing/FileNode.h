@@ -7,11 +7,9 @@
 #include "MyRandom.h"
 
 
-struct FileNode
+class FileNode
 {
-	std::string FileName;
-	std::string ID;
-
+public:
 	FileNode(std::string fileName)
 	{
 		FileName = fileName;
@@ -19,14 +17,17 @@ struct FileNode
 		ID = FileName + "_" + std::format("{:020}", idGenerator());
 	}
 
+	const std::string& GetID()
+	{
+		return ID;
+	}
+
 	void print()
 	{
 		std::cout << FileName << std::endl;
 	}
 
-public:
-	const std::string& GetId()
-	{
-		return ID;
-	}
+private:
+	std::string FileName;
+	std::string ID;
 };

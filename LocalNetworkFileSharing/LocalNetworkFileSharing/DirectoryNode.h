@@ -11,13 +11,15 @@
 #include "MyRandom.h"
 #include "FileNode.h"
 
+class SharedFolder;
+
 namespace fs = std::filesystem;
 
 class DirectoryNode
 {
 
 public:
-	DirectoryNode(fs::path localPathOnDisk, std::map<std::string, DirectoryNode*>& allDirectories, uint64_t& directoriesSize, uint64_t& filesSize)
+	DirectoryNode(fs::path localPathOnDisk, SharedFolder& rootFolder)
 	{
 		static MyRandom idGenerator = MyRandom(false);
 
@@ -29,7 +31,12 @@ public:
 		// 18446744073709551615 = uint64::max = 20 digits
 		ID = FolderName + "_" + std::format("{:020}", idGenerator());
 
-		AddToDirectoryTree(this, allDirectories, directoriesSize, filesSize);
+		AddToDirectoryTree(this, rootFolder);
+	}
+
+	const std::string& GetID()
+	{
+		return ID;
 	}
 
 	void print()
@@ -37,9 +44,14 @@ public:
 		std::cout << Files.size() << "; " << SubDirectories.size() << "; " << FolderName << "; " << ID << "; " << LocalPathOnDisk << std::endl;
 	}
 
-	char* Serialize()
+	const std::map<std::string, std::unique_ptr<FileNode>>* GetFiles()
 	{
+		return &Files;
+	}
 
+	const std::vector<std::unique_ptr<DirectoryNode>>* GetSubDirs()
+	{
+		return &SubDirectories;
 	}
 
 private:
@@ -50,5 +62,5 @@ private:
 	std::string ID;
 	fs::path LocalPathOnDisk;
 
-	void AddToDirectoryTree(DirectoryNode* currentNode, std::map<std::string, DirectoryNode*>& allDirectories, uint64_t& directoriesSize, uint64_t& filesSize);
+	void AddToDirectoryTree(DirectoryNode* currentNode, SharedFolder& rootFolder);
 };

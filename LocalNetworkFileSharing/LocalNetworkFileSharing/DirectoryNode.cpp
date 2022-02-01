@@ -1,11 +1,12 @@
 #include "DirectoryNode.h"
+#include "SharedFolder.h"
 
-void DirectoryNode::AddToDirectoryTree(DirectoryNode* currentNode, std::map<std::string, DirectoryNode*>& allDirectories, uint64_t& directoriesSize, uint64_t& filesSize)
+void DirectoryNode::AddToDirectoryTree(DirectoryNode* currentNode, SharedFolder& rootFolder)
 {
 	// Only directories should be added. The logic will not work with a file.
 	assert(fs::is_directory(currentNode->LocalPathOnDisk));
 
-	allDirectories.emplace(currentNode->ID, currentNode);
+	rootFolder.SaveDirectoryMetaData(currentNode);
 
 	currentNode->print();
 
@@ -13,9 +14,9 @@ void DirectoryNode::AddToDirectoryTree(DirectoryNode* currentNode, std::map<std:
 	{
 		if (p.is_directory())
 		{
-			auto thisNode = std::make_unique<DirectoryNode>(p.path(), allDirectories);
+			auto thisNode = std::make_unique<DirectoryNode>(p.path(), rootFolder);
 
-			AddToDirectoryTree(thisNode.get(), allDirectories, directoriesSize, filesSize);
+			AddToDirectoryTree(thisNode.get(), rootFolder);
 
 			currentNode->SubDirectories.push_back(std::move(thisNode));
 		}
@@ -23,8 +24,8 @@ void DirectoryNode::AddToDirectoryTree(DirectoryNode* currentNode, std::map<std:
 		{
 			auto newFile = std::make_unique<FileNode>(p.path().filename().string());
 			newFile->print();
-			currentNode->Files.emplace(newFile->GetId(), std::move(newFile));
+			rootFolder.SaveFileMetaData(newFile.get());
+			currentNode->Files.emplace(newFile->GetID(), std::move(newFile));
 		}
-
 	}
 }
