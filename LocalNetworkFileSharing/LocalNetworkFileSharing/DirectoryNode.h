@@ -34,12 +34,14 @@ public:
 		AddToDirectoryTree(this, rootFolder);
 	}
 
-	DirectoryNode(std::string id)
+	static std::unique_ptr<DirectoryNode> FromId(std::string id)
 	{
-		Files = std::map<std::string, std::unique_ptr<FileNode>>();
-		SubDirectories = std::vector<std::unique_ptr<DirectoryNode>>();
-		ID = id;
-		FolderName = id.substr(0, id.find_last_of("_"));
+		std::unique_ptr<DirectoryNode> newDirNode;
+		newDirNode->Files = std::map<std::string, std::unique_ptr<FileNode>>();
+		newDirNode->SubDirectories = std::vector<std::unique_ptr<DirectoryNode>>();
+		newDirNode->ID = id;
+		newDirNode->FolderName = id.substr(0, id.find_last_of("_"));
+		return std::move(newDirNode);
 	}
 
 	const std::string& GetID()
@@ -57,12 +59,20 @@ public:
 		return &Files;
 	}
 
+	void AddFile(std::string id, std::unique_ptr<FileNode> fileNode)
+	{
+		Files.emplace(id, std::move(fileNode));
+	}
+
 	const std::vector<std::unique_ptr<DirectoryNode>>* GetSubDirs()
 	{
 		return &SubDirectories;
 	}
 
 private:
+
+	DirectoryNode()
+	{ }
 
 	std::map<std::string, std::unique_ptr<FileNode>> Files;
 	std::vector<std::unique_ptr<DirectoryNode>> SubDirectories;

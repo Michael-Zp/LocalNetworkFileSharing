@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <map>
+#include <stack>
 
 #include "DirectoryNode.h"
 
@@ -19,20 +20,68 @@ public:
 	{
 		uint64_t pos = 0;
 
+		SharedFolder newSharedFolder;
+		
+		newSharedFolder.Root = ReadDirectory(data, pos, dataSize);
+
+		std::stack<DirectoryNode*> directoryHierarchy;
+		directoryHierarchy.push(newSharedFolder.Root.get());
+
+		ReadFiles(data, pos, dataSize, directoryHierarchy.top());
+
+		return;
+	}
+
+	static std::unique_ptr<DirectoryNode> ReadDirectory(char* data, uint64_t& pos, uint64_t dataSize)
+	{
+		assert(CheckBounds<char>(pos, dataSize));
+
 		// Always has to be a folder as the root
 		assert(data[pos] == (char)SerializeFlags::Directory);
 		++pos;
 
-		uint64_t* rootSize = reinterpret_cast<uint64_t*>(&(data[pos]));
+		assert(CheckBounds<uint64_t>(pos, dataSize));
+		uint64_t* idSize = reinterpret_cast<uint64_t*>(&(data[pos]));
 		pos += sizeof(uint64_t);
 
-		std::string rootId = std::string(&(data[pos]), *rootSize);
+		assert(CheckBounds(*idSize, pos, dataSize));
+		std::string id = std::string(&(data[pos]), *idSize);
 
-		SharedFolder newSharedFolder;
+		return std::move(DirectoryNode::FromId(id));
+	}
 
-		newSharedFolder.Root = std::make_unique<DirectoryNode>(rootId);
+	static void ReadFiles(char* data, uint64_t& pos, uint64_t dataSize, DirectoryNode* parent)
+	{
+		if (!CheckBounds<char>(pos, dataSize))
+		{
+			// Seems to be the end of the buffer, so just return
+			return;
+		}
 
-		return;
+		while (data[pos] == (char)SerializeFlags::File)
+		{
+			++pos;
+
+			CheckBounds<uint64_t>(pos, dataSize);
+			uint64_t* idSize = reinterpret_cast<uint64_t*>(&(data[pos]));
+			pos += sizeof(uint64_t);
+
+			CheckBounds(*idSize, pos, dataSize);
+			std::string id = std::string(&(data[pos]), *idSize);
+
+			//parent->AddFile(id, std::move(FileNode::FromId(id)));
+		}
+	}
+
+	template <typename T>
+	static bool CheckBounds(uint64_t pos, uint64_t size)
+	{
+		return CheckBounds(sizeof(T), pos, size);
+	}
+
+	static bool CheckBounds(uint64_t requiredSize, uint64_t pos, uint64_t size)
+	{
+		return (size - pos > requiredSize);
 	}
 
 	void SaveDirectoryMetaData(DirectoryNode* directoryNode)
@@ -128,7 +177,7 @@ private:
 	std::unique_ptr<DirectoryNode> Root;
 	std::map<std::string, DirectoryNode*> AllDirectories;
 
-	SharedFolder()
+	SharedFolder() : DirectoriesSize(0), DirectoriesCount(0), FilesSize(0), FilesCount(0)
 	{ }
 
 	enum class SerializeFlags : char

@@ -17,6 +17,14 @@ public:
 		ID = FileName + "_" + std::format("{:020}", idGenerator());
 	}
 
+	static std::unique_ptr<FileNode> FromId(std::string id)
+	{
+		std::unique_ptr<FileNode> newFileNode;
+		newFileNode->ID = id;
+		newFileNode->FileName = id.substr(0, id.find_last_of("_"));
+		return std::move(newFileNode);
+	}
+
 	const std::string& GetID()
 	{
 		return ID;
@@ -28,6 +36,10 @@ public:
 	}
 
 private:
+
+	FileNode()
+	{ }
+
 	std::string FileName;
 	std::string ID;
 };
