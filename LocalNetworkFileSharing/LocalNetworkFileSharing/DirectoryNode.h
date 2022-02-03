@@ -36,7 +36,7 @@ public:
 
 	static std::unique_ptr<DirectoryNode> FromId(std::string id)
 	{
-		std::unique_ptr<DirectoryNode> newDirNode;
+		std::unique_ptr<DirectoryNode> newDirNode = std::unique_ptr<DirectoryNode>(new DirectoryNode());
 		newDirNode->Files = std::map<std::string, std::unique_ptr<FileNode>>();
 		newDirNode->SubDirectories = std::vector<std::unique_ptr<DirectoryNode>>();
 		newDirNode->ID = id;

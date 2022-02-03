@@ -19,7 +19,7 @@ public:
 
 	static std::unique_ptr<FileNode> FromId(std::string id)
 	{
-		std::unique_ptr<FileNode> newFileNode;
+		std::unique_ptr<FileNode> newFileNode = std::unique_ptr<FileNode>(new FileNode());
 		newFileNode->ID = id;
 		newFileNode->FileName = id.substr(0, id.find_last_of("_"));
 		return std::move(newFileNode);

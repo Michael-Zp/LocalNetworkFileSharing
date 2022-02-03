@@ -46,6 +46,7 @@ public:
 
 		assert(CheckBounds(*idSize, pos, dataSize));
 		std::string id = std::string(&(data[pos]), *idSize);
+		pos += *idSize;
 
 		return std::move(DirectoryNode::FromId(id));
 	}
@@ -68,8 +69,9 @@ public:
 
 			CheckBounds(*idSize, pos, dataSize);
 			std::string id = std::string(&(data[pos]), *idSize);
+			pos += *idSize;
 
-			//parent->AddFile(id, std::move(FileNode::FromId(id)));
+			parent->AddFile(id, std::move(FileNode::FromId(id)));
 		}
 	}
 
