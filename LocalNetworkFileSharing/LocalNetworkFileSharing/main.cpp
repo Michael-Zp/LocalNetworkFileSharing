@@ -10,7 +10,7 @@ int main(int argc, const char* argv)
 
 	auto serialized = sharedFolder.Serialize();
 
-	SharedFolder::Deserialize(serialized.first, serialized.second);
+	auto deserialized = SharedFolder::Deserialize(serialized.first, serialized.second);
 
 	return 0;
 }

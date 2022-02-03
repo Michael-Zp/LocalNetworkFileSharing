@@ -16,23 +16,55 @@ public:
 		Root = std::make_unique<DirectoryNode>(localPathOnDisk, *this);
 	}
 
-	static void Deserialize(uint64_t dataSize, char* data)
+	static SharedFolder Deserialize(uint64_t dataSize, char* data)
 	{
 		uint64_t pos = 0;
 
 		SharedFolder newSharedFolder;
 		
-		newSharedFolder.Root = ReadDirectory(data, pos, dataSize);
+		newSharedFolder.Root = ReadDirectory(data, pos, dataSize, newSharedFolder);
 
 		std::stack<DirectoryNode*> directoryHierarchy;
 		directoryHierarchy.push(newSharedFolder.Root.get());
 
-		ReadFiles(data, pos, dataSize, directoryHierarchy.top());
+		while (pos < dataSize)
+		{
+			if (data[pos] & (char)SerializeFlags::DirChange)
+			{
+				if (data[pos] & (char)SerializeFlags::GoDown)
+				{
+					++pos;
+					std::unique_ptr<DirectoryNode> newDir = ReadDirectory(data, pos, dataSize, newSharedFolder);
+					directoryHierarchy.push(newDir.get());
+					directoryHierarchy.top()->AddDir(std::move(newDir));
+				}
+				else if (data[pos] & (char)SerializeFlags::GoUp)
+				{
+					++pos;
+					directoryHierarchy.pop();
+				}
+				else
+				{
+					// Should not happen
+					assert(false);
+				}
+			}
+			else if (data[pos] & (char)SerializeFlags::Directory)
+			{
+				++pos;
+				directoryHierarchy.top()->AddDir(std::move(ReadDirectory(data, pos, dataSize, newSharedFolder)));
+			}
+			else
+			{
+				// Should not happen
+				assert(false);
+			}
+		}
 
-		return;
+		return newSharedFolder;
 	}
 
-	static std::unique_ptr<DirectoryNode> ReadDirectory(char* data, uint64_t& pos, uint64_t dataSize)
+	static std::unique_ptr<DirectoryNode> ReadDirectory(char* data, uint64_t& pos, uint64_t dataSize, SharedFolder& root)
 	{
 		assert(CheckBounds<char>(pos, dataSize));
 
@@ -48,10 +80,19 @@ public:
 		std::string id = std::string(&(data[pos]), *idSize);
 		pos += *idSize;
 
-		return std::move(DirectoryNode::FromId(id));
+		std::unique_ptr<DirectoryNode> newDir = DirectoryNode::FromId(id);
+
+		newDir->print();
+		++root.DirectoriesCount;
+		root.DirectoriesSize += *idSize;
+		root.AllDirectories.emplace(id, newDir.get());
+
+		ReadFiles(data, pos, dataSize, newDir.get(), root);
+
+		return std::move(newDir);
 	}
 
-	static void ReadFiles(char* data, uint64_t& pos, uint64_t dataSize, DirectoryNode* parent)
+	static void ReadFiles(char* data, uint64_t& pos, uint64_t dataSize, DirectoryNode* parent, SharedFolder& root)
 	{
 		if (!CheckBounds<char>(pos, dataSize))
 		{
@@ -71,7 +112,13 @@ public:
 			std::string id = std::string(&(data[pos]), *idSize);
 			pos += *idSize;
 
-			parent->AddFile(id, std::move(FileNode::FromId(id)));
+			std::unique_ptr<FileNode> newFile = FileNode::FromId(id);
+
+			newFile->print();
+			++root.FilesCount;
+			root.FilesSize += *idSize;
+			
+			parent->AddFile(id, std::move(newFile));
 		}
 	}
 

@@ -69,6 +69,11 @@ public:
 		return &SubDirectories;
 	}
 
+	void AddDir(std::unique_ptr<DirectoryNode> dirNode)
+	{
+		SubDirectories.push_back(std::move(dirNode));
+	}
+
 private:
 
 	DirectoryNode()
