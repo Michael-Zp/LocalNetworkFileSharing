@@ -10,6 +10,8 @@ int main(int argc, const char* argv)
 
 	auto serialized = sharedFolder.Serialize();
 
+	std::string testStr = std::string(serialized.second, serialized.first);
+
 	auto deserialized = SharedFolder::Deserialize(serialized.first, serialized.second);
 
 	return 0;

@@ -35,8 +35,8 @@ public:
 				{
 					++pos;
 					std::unique_ptr<DirectoryNode> newDir = ReadDirectory(data, pos, dataSize, newSharedFolder);
-					directoryHierarchy.push(newDir.get());
 					directoryHierarchy.top()->AddDir(std::move(newDir));
+					directoryHierarchy.push(newDir.get());
 				}
 				else if (data[pos] & (char)SerializeFlags::GoUp)
 				{
@@ -186,14 +186,14 @@ public:
 			buf[pos] = (char)SerializeFlags::File;
 			++pos;
 
-			uint64_t sizeOfFileId = currentNode->GetID().size();
+			uint64_t sizeOfFileId = file.first.size();
 
 			// Size of ID
 			memcpy_s(buf + pos, bufSize - pos, &sizeOfFileId, sizeof(uint64_t));
 			pos += sizeof(uint64_t);
 
 			// ID string
-			memcpy_s(buf + pos, bufSize - pos, currentNode->GetID().data(), sizeOfFileId);
+			memcpy_s(buf + pos, bufSize - pos, file.first.data(), sizeOfFileId);
 			pos += sizeOfFileId;
 		}
 
